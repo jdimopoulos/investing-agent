@@ -10,10 +10,7 @@ app = Flask(__name__)
 # Enable CORS to allow the frontend on index.html to communicate with this server
 CORS(app)
 
-# Your verified Gemini API key is hardcoded here
-API_KEY = "GEMINI_API_KEY"
-
-# Initialize the Gemini client with the explicit API key
+API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=API_KEY)
 
 def extract_clean_json(text):
