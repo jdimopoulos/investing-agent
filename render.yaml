@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: investing-agent
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app_gemini.py
-    envVars:
-      - key: GEMINI_API_KEY
-        sync: false
