@@ -208,7 +208,6 @@ def chat():
         print(f"Server Chat Error: {str(e)}")
         return jsonify({"error": f"Failed to compile response: {str(e)}"}), 500
 
-if __name__ == '__main__':
-    if __name__ == "__main__":
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)
