@@ -88,7 +88,7 @@ def analyze_single_ticker(ticker):
             )
         )
     except Exception:
-        time.sleep(2)
+        time.sleep(3)
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt,
@@ -155,7 +155,7 @@ def analyze_ticker():
     for ticker in tickers:
     brief = analyze_single_ticker(ticker)
     briefs.append(brief)
-    time.sleep(1)  # 1 second pause between calls
+    time.sleep(5)  # 1 second pause between calls
                 
     # Wrap results in the expected 'briefs' key
     return jsonify({"briefs": briefs}), 200
