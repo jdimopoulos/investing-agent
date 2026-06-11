@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from google import genai
 from google.genai import types
+import traceback
 
 app = Flask(__name__)
 # Enable CORS to allow the frontend on index.html to communicate with this server
@@ -111,6 +112,7 @@ def analyze_single_ticker(ticker):
 
     except Exception as e:
         print(f"Error handling ticker {ticker}: {str(e)}")
+        print(traceback.format_exc())
         # Return a graceful, isolated fallback brief for this specific ticker
         return build_safe_response(
             ticker=ticker,
