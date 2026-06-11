@@ -2,6 +2,23 @@
 
 A browser-based investing research agent powered by the Anthropic Claude API with web search.
 
+## Live Demo
+https://investing-agent-7uiz.onrender.com
+
+> Note: The app may take 30–60 seconds to load if it hasn't been 
+> visited recently (free tier cold start).
+
+## What It Does
+- Enter up to 6 stock tickers and get a Buy / Hold / Sell rating for each
+- Each rating includes a live web-searched pro and con list 
+  plus an additional insights section
+- Built-in chatbot for follow-up questions about any stock
+
+## Tech Stack
+- Python / Flask backend
+- Google Gemini API with web search grounding
+- Deployed on Render
+
 ## Setup (one time)
 
 **1. Install Python dependencies**
