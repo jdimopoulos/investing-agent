@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from google import genai
 from google.genai import types
+from flask import send_from_directory
 
 app = Flask(__name__)
 # Enable CORS to allow the frontend on index.html to communicate with this server
@@ -207,6 +208,10 @@ def chat():
     except Exception as e:
         print(f"Server Chat Error: {str(e)}")
         return jsonify({"error": f"Failed to compile response: {str(e)}"}), 500
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
