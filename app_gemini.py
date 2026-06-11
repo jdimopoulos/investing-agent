@@ -1,11 +1,10 @@
 import os
 import json
 import re
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from google import genai
 from google.genai import types
-from flask import send_from_directory
 
 app = Flask(__name__)
 # Enable CORS to allow the frontend on index.html to communicate with this server
