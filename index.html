@@ -673,7 +673,7 @@
     statusText.textContent = `Analyzing web metrics for ${tickers.join(', ')}... this takes 15–30 seconds`;
 
     try {
-      const res = await fetch('http://127.0.0.1:5001/analyze', {
+      const res = await fetch('https://investing-agent-7uiz.onrender.com/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tickers: input })
@@ -901,7 +901,7 @@
     const selectedTicker = document.getElementById('chatContext').value;
 
     try {
-      const res = await fetch('http://127.0.0.1:5001/chat', {
+      const res = await fetch('https://investing-agent-7uiz.onrender.com/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
