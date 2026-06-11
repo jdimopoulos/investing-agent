@@ -6,6 +6,7 @@ from flask_cors import CORS
 from google import genai
 from google.genai import types
 import traceback
+import time
 
 app = Flask(__name__)
 # Enable CORS to allow the frontend on index.html to communicate with this server
@@ -76,7 +77,18 @@ def analyze_single_ticker(ticker):
     )
 
     try:
-        # Call Gemini 2.5 Flash with search tools enabled
+    # Call Gemini 2.5 Flash with search tools enabled
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                tools=[types.Tool(google_search=types.GoogleSearch())],
+                temperature=0.15
+            )
+        )
+    except Exception:
+        time.sleep(2)
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt,
@@ -141,8 +153,9 @@ def analyze_ticker():
     
     briefs = []
     for ticker in tickers:
-        brief = analyze_single_ticker(ticker)
-        briefs.append(brief)
+    brief = analyze_single_ticker(ticker)
+    briefs.append(brief)
+    time.sleep(1)  # 1 second pause between calls
                 
     # Wrap results in the expected 'briefs' key
     return jsonify({"briefs": briefs}), 200
@@ -197,7 +210,7 @@ def chat():
             config=types.GenerateContentConfig(
                 tools=[types.Tool(google_search=types.GoogleSearch())],
                 system_instruction=system_instruction,
-                temperature=0.3
+                temperature=0.15
             )
         )
         
