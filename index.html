@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Argos — Pre-Trade Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #111418;
+    --bg3: #181c22;
+    --bg4: #1e242c;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaed;
+    --text2: #8b9098;
+    --text3: #555c66;
+    --green: #3ddc84;
+    --green-dim: rgba(61,220,132,0.12);
+    --red: #ff6b6b;
+    --red-dim: rgba(255,107,107,0.1);
+    --amber: #f5a623;
+    --amber-dim: rgba(245,166,35,0.1);
+    --blue: #4d9fff;
+    --blue-dim: rgba(77,159,255,0.1);
+    --accent: #3ddc84;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+  body { min-height: 100vh; position: relative; }
+
+  .topbar {
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,12,15,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .topbar-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.05em;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 3rem 2rem; }
+
+  .hero { margin-bottom: 3rem; }
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+  .hero h1 em { font-style: normal; color: var(--accent); font-weight: 400; }
+  .hero p { color: var(--text2); font-size: 14px; max-width: 480px; }
+
+  .input-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .input-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    display: block;
+  }
+
+  .input-row { display: flex; gap: 12px; align-items: center; }
+
+  .ticker-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    text-transform: uppercase;
+  }
+  .ticker-input::placeholder { color: var(--text3); text-transform: none; letter-spacing: 0; font-weight: 300; }
+  .ticker-input:focus { border-color: var(--accent); }
+
+  .run-btn {
+    background: var(--accent);
+    color: #0a0c0f;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .run-btn:hover { opacity: 0.88; }
+  .run-btn:active { transform: scale(0.97); }
+  .run-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .input-hint { margin-top: 0.75rem; font-size: 12px; color: var(--text3); font-family: var(--mono); }
+
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    padding: 1rem 1.25rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text2);
+  }
+  .status-bar.visible { display: flex; }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    display: none;
+    background: var(--red-dim);
+    border: 1px solid rgba(255,107,107,0.2);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 13px;
+    color: var(--red);
+    margin-bottom: 2rem;
+    font-family: var(--mono);
+  }
+  .error-box.visible { display: block; }
+
+  .briefs-grid { display: flex; flex-direction: column; gap: 1.5rem; }
+
+  .brief-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .brief-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+  }
+
+  .ticker-badge {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+
+  .company-name {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .sentiment-pill {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .sentiment-pill.bullish { background: var(--green-dim); color: var(--green); border: 1px solid rgba(61,220,132,0.2); }
+  .sentiment-pill.neutral { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
+  .sentiment-pill.bearish { background: var(--red-dim); color: var(--red); border: 1px solid rgba(255,107,107,0.2); }
+
+  .brief-body { padding: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 0.6rem;
+  }
+
+  .meta-row { display: flex; gap: 1.5rem; margin-bottom: 1.25rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); grid-column: 1 / -1; }
+  .meta-item { flex: 1; }
+  .meta-value { font-family: var(--mono); font-size: 14px; color: var(--text); }
+
+  .list-items { list-style: none; }
+  .list-items li {
+    font-size: 13px;
+    color: var(--text2);
+    padding: 4px 0;
+    padding-left: 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .list-items li::before { content: '—'; position: absolute; left: 0; color: var(--text3); }
+
+  .list-items.catalysts li::before { color: var(--green); content: '+'; }
+  .list-items.risks li::before { color: var(--red); content: '−'; }
+
+  .brief-footer {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg3);
+    grid-column: 1 / -1;
+  }
+
+  .thesis-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+    font-style: italic;
+  }
+
+  .options-box {
+    grid-column: 1 / -1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .options-icon {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    background: var(--blue-dim);
+    padding: 3px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    letter-spacing: 0.06em;
+  }
+
+  .options-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  .sentiment-reason { font-size: 13px; color: var(--text2); grid-column: 1 / -1; font-style: italic; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+
+  /* FLOATING CHAT SYSTEM STYLES */
+  .chat-widget {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .chat-toggle-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0a0c0f;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(61, 220, 132, 0.25);
+    transition: transform 0.2s, background-color 0.2s;
+  }
+  .chat-toggle-btn:hover {
+    transform: scale(1.05);
+  }
+  .chat-toggle-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+  }
+
+  .chat-window {
+    width: 380px;
+    height: 520px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    margin-bottom: 16px;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    animation: popUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .chat-window.visible {
+    display: flex;
+  }
+
+  @keyframes popUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .chat-header {
+    padding: 1rem 1.25rem;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .chat-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chat-context-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    outline: none;
+    max-width: 120px;
+    cursor: pointer;
+  }
+  .chat-context-select:focus {
+    border-color: var(--accent);
+  }
+
+  .chat-close-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+  .chat-close-btn:hover {
+    color: var(--red);
+  }
+
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    scroll-behavior: smooth;
+  }
+
+  .chat-msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  
+  .chat-msg.user {
+    background: var(--bg4);
+    color: var(--text);
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  .chat-msg.assistant {
+    background: var(--bg3);
+    color: var(--text2);
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+    border: 1px solid var(--border);
+  }
+
+  .chat-msg strong {
+    color: var(--text);
+  }
+
+  /* Simple markdown formatting elements */
+  .chat-msg ul {
+    margin: 6px 0;
+    padding-left: 18px;
+  }
+  .chat-msg table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .chat-msg th, .chat-msg td {
+    border: 1px solid var(--border2);
+    padding: 4px 6px;
+    text-align: left;
+  }
+  .chat-msg th {
+    background: var(--bg);
+    color: var(--accent);
+  }
+
+  .chat-typing {
+    align-self: flex-start;
+    background: var(--bg3);
+    padding: 10px 14px;
+    border-radius: 8px;
+    border-bottom-left-radius: 2px;
+    border: 1px solid var(--border);
+    display: none;
+    align-items: center;
+    gap: 4px;
+  }
+  .chat-typing.visible {
+    display: flex;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--text3);
+    border-radius: 50%;
+    animation: typingPulse 1.2s infinite ease-in-out;
+  }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingPulse {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  .chat-input-bar {
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    background: var(--bg3);
+  }
+
+  .chat-textarea {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: var(--sans);
+    font-size: 13px;
+    outline: none;
+    resize: none;
+    height: 36px;
+    transition: border-color 0.2s;
+  }
+  .chat-textarea:focus {
+    border-color: var(--accent);
+  }
+
+  .chat-send-btn {
+    background: var(--accent);
+    border: none;
+    color: #0a0c0f;
+    border-radius: 6px;
+    padding: 0 14px;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-send-btn:hover {
+    opacity: 0.9;
+  }
+
+  @media (max-width: 600px) {
+    .brief-body { grid-template-columns: 1fr; }
+    .meta-row { flex-direction: column; gap: 1rem; }
+    .input-row { flex-direction: column; }
+    .run-btn { width: 100%; }
+    .chat-window {
+      width: calc(100vw - 32px);
+      right: 16px;
+      bottom: 80px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <span class="logo-dot"></span>
+    ARGOS
+  </div>
+  <div class="topbar-meta">Pre-Trade Intelligence System v1.1</div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <h1>Use <em>Argos</em>, your AI Agent, to analyze potential stock picks</h1>
+    <p>Enter up to 6 tickers. Argos searches the web and returns quantitative derivatives metrics: Forward P/E multiples, Implied Volatility (IV) ranks, Delta decay targets, and structural trading strategies.</p>
+  </div>
+
+  <div class="input-panel">
+    <label class="input-label" for="tickers">Ticker symbols</label>
+    <div class="input-row">
+      <input
+        class="ticker-input"
+        id="tickers"
+        type="text"
+        placeholder="e.g. NVDA, AMD, TSLA"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="run-btn" id="runBtn" onclick="analyze()">Run Analysis →</button>
+    </div>
+    <div class="input-hint">Separate tickers with commas or spaces &nbsp;·&nbsp; Max 6 per run</div>
+  </div>
+
+  <div class="status-bar" id="statusBar">
+    <div class="spinner"></div>
+    <span id="statusText">Searching the web and generating briefs...</span>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="briefs-grid" id="briefsGrid"></div>
+</div>
+
+<div class="chat-widget">
+  <div class="chat-window" id="chatWindow">
+    <div class="chat-header">
+      <div class="chat-title">
+        <span class="logo-dot" style="width: 5px; height: 5px;"></span>
+        Analyst Desk
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <select class="chat-context-select" id="chatContext" title="Select stock context for chat">
+          <option value="">No Context</option>
+        </select>
+        <button class="chat-close-btn" onclick="toggleChat()" title="Close Desk">✕</button>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg assistant">
+        Welcome to the Argos Analyst Desk. Enter tickers in the dashboard to analyze them, then select a ticker above as context or ask general market questions here.
+      </div>
+    </div>
+    <div class="chat-typing" id="chatTyping">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+    <div class="chat-input-bar">
+      <textarea 
+        class="chat-textarea" 
+        id="chatTextarea" 
+        placeholder="Ask about Greeks, valuation, or news..."
+        rows="1"
+      ></textarea>
+      <button class="chat-send-btn" onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+  
+  <button class="chat-toggle-btn" onclick="toggleChat()" title="Open Analyst Desk">
+    <svg viewBox="0 0 24 24">
+      <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+  let activeTickers = [];
+  let chatHistory = [];
+
+  async function analyze() {
+    const input = document.getElementById('tickers').value.trim();
+    if (!input) return;
+
+    const btn = document.getElementById('runBtn');
+    const statusBar = document.getElementById('statusBar');
+    const statusText = document.getElementById('statusText');
+    const errorBox = document.getElementById('errorBox');
+    const grid = document.getElementById('briefsGrid');
+
+    btn.disabled = true;
+    statusBar.classList.add('visible');
+    errorBox.classList.remove('visible');
+    grid.innerHTML = '';
+
+    const tickers = input.toUpperCase().replace(/,/g, ' ').split(/\s+/).filter(Boolean);
+    statusText.textContent = `Analyzing web metrics for ${tickers.join(', ')}... this takes 15–30 seconds`;
+
+    try {
+      const res = await fetch('http://127.0.0.1:5001/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tickers: input })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        errorBox.textContent = 'Error: ' + data.error;
+        errorBox.classList.add('visible');
+      } else {
+        renderBriefs(data.briefs);
+        updateChatContext(data.briefs);
+      }
+    } catch (err) {
+      errorBox.textContent = 'Network error: ' + err.message;
+      errorBox.classList.add('visible');
+    } finally {
+      btn.disabled = false;
+      statusBar.classList.remove('visible');
+    }
+  }
+
+  function renderBriefs(briefs) {
+    const grid = document.getElementById('briefsGrid');
+
+    briefs.forEach((b, i) => {
+      const sentimentClass = b.sentiment?.toLowerCase() || 'neutral';
+      const card = document.createElement('div');
+      card.className = 'brief-card';
+      card.style.animationDelay = `${i * 0.08}s`;
+
+      const catalysts = (b.catalysts || []).map(c => `<li>${c}</li>`).join('');
+      const risks = (b.risks || []).map(r => `<li>${r}</li>`).join('');
+
+      card.innerHTML = `
+        <div class="brief-header">
+          <div>
+            <div class="ticker-badge">${b.ticker || '—'}</div>
+            <div class="company-name">${b.company_name || ''}</div>
+          </div>
+          <div class="sentiment-pill ${sentimentClass}">${b.sentiment || 'Neutral'}</div>
+        </div>
+        <div class="brief-body">
+          <div class="meta-row">
+            <div class="meta-item">
+              <div class="section-label">Valuation & Targets</div>
+              <div class="meta-value">${b.price_target || 'N/A'}</div>
+            </div>
+            <div class="meta-item">
+              <div class="section-label">Earnings Date</div>
+              <div class="meta-value">${b.earnings_date || 'Not found'}</div>
+            </div>
+          </div>
+          ${b.sentiment_reason ? `<div class="sentiment-reason">"${b.sentiment_reason}"</div>` : ''}
+          <div>
+            <div class="section-label">Catalysts</div>
+            <ul class="list-items catalysts">${catalysts || '<li>None identified</li>'}</ul>
+          </div>
+          <div>
+            <div class="section-label">Risks</div>
+            <ul class="list-items risks">${risks || '<li>None identified</li>'}</ul>
+          </div>
+          <div class="options-box">
+            <span class="options-icon">GREEKS</span>
+            <div class="options-text">${b.options_note || 'No options data found.'}</div>
+          </div>
+          <div class="brief-footer">
+            <div class="section-label" style="margin-bottom: 0.5rem">Trade Architecture Thesis</div>
+            <div class="thesis-text">${b.thesis_check || '—'}</div>
+          </div>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  // FLOATING CHAT COMPONENT JAVASCRIPT
+  function toggleChat() {
+    const chatWin = document.getElementById('chatWindow');
+    chatWin.classList.toggle('visible');
+    
+    // Auto-scroll to bottom of conversation if opening
+    if (chatWin.classList.contains('visible')) {
+      const msgs = document.getElementById('chatMessages');
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  }
+
+  function updateChatContext(briefs) {
+    const contextSelect = document.getElementById('chatContext');
+    
+    // Save active tickers
+    activeTickers = briefs.map(b => b.ticker).filter(t => t && t !== 'ERROR');
+    
+    // Clear select options except the default
+    contextSelect.innerHTML = '<option value="">No Context</option>';
+    
+    activeTickers.forEach(ticker => {
+      const opt = document.createElement('option');
+      opt.value = ticker;
+      opt.textContent = ticker;
+      contextSelect.appendChild(opt);
+    });
+
+    // Default select context to the first ticker parsed
+    if (activeTickers.length > 0) {
+      contextSelect.value = activeTickers[0];
+      
+      // Auto-post system announcement in desk chat box
+      appendChatMessage('system', `Analyst Desk context locked onto: ${activeTickers.join(', ')}`);
+    }
+  }
+
+  function parseLightweightMarkdown(text) {
+    // Escapes basic HTML
+    let parsed = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // Code blocks - safely avoiding literal triple backticks in JS code blocks to prevent layout truncation
+    const codeBlockRegex = new RegExp("```" + "([\\s\\S]*?)" + "```", "g");
+    parsed = parsed.replace(codeBlockRegex, '<pre style="background: var(--bg); border: 1px solid var(--border2); padding: 8px; border-radius: 4px; overflow: auto; font-family: var(--mono); font-size:11px; margin: 8px 0;">$1</pre>');
+
+    // Bold tags
+    parsed = parsed.replace(/\*\*(.*?)\*\"/g, '<strong>$1</strong>');
+
+    // Bullet loops
+    parsed = parsed.replace(/^\s*[-*+]\s+(.*?)$/gm, '<li>$1</li>');
+    parsed = parsed.replace(/(<li>.*?<\/li>)+/g, '<ul>$&</ul>');
+
+    // Inline backticks
+    parsed = parsed.replace(/`(.*?)`/g, '<code style="background: var(--bg); padding: 2px 4px; border-radius:3px; font-family: var(--mono); font-size: 11px;">$1</code>');
+
+    // Table mapping
+    if (parsed.includes('|')) {
+      const lines = parsed.split('\n');
+      let tableHtml = '<table>';
+      let inTable = false;
+      let headerPassed = false;
+
+      lines.forEach(line => {
+        if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+          inTable = true;
+          const columns = line.split('|').map(c => c.trim()).filter((c, i, arr) => i > 0 && i < arr.length - 1);
+          
+          if (line.includes('---')) {
+            // Ignore separator line
+            return;
+          }
+          
+          tableHtml += '<tr>';
+          columns.forEach(col => {
+            if (!headerPassed) {
+              tableHtml += `<th>${col}</th>`;
+            } else {
+              tableHtml += `<td>${col}</td>`;
+            }
+          });
+          tableHtml += '</tr>';
+          
+          if (!headerPassed) headerPassed = true;
+        } else {
+          if (inTable) {
+            tableHtml += '</table>';
+            parsed = parsed.replace(/\|[\s\S]*?\|/m, tableHtml); // replace the table match
+            inTable = false;
+            tableHtml = '<table>';
+            headerPassed = false;
+          }
+        }
+      });
+      if (inTable) {
+        tableHtml += '</table>';
+        parsed = parsed.replace(/\|[\s\S]*?\|/gm, tableHtml);
+      }
+    }
+
+    // Newline break handling
+    parsed = parsed.replace(/\n/g, '<br>');
+
+    return parsed;
+  }
+
+  function appendChatMessage(role, text) {
+    const msgsContainer = document.getElementById('chatMessages');
+    const msgDiv = document.createElement('div');
+    
+    if (role === 'system') {
+      msgDiv.className = 'chat-msg assistant';
+      msgDiv.style.fontStyle = 'italic';
+      msgDiv.style.borderColor = 'rgba(61, 220, 132, 0.2)';
+      msgDiv.style.background = 'rgba(61, 220, 132, 0.03)';
+      msgDiv.innerHTML = `<span style="color: var(--accent); font-family: var(--mono); font-size:10px; display:block; margin-bottom: 2px;">[SYSTEM OUT]</span> ${text}`;
+    } else {
+      msgDiv.className = `chat-msg ${role}`;
+      msgDiv.innerHTML = role === 'assistant' ? parseLightweightMarkdown(text) : text;
+    }
+    
+    msgsContainer.appendChild(msgDiv);
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  }
+
+  async function sendChatMessage() {
+    const textInput = document.getElementById('chatTextarea');
+    const prompt = textInput.value.trim();
+    if (!prompt) return;
+
+    // Clear textarea instantly
+    textInput.value = '';
+
+    // Render User bubble
+    appendChatMessage('user', prompt);
+
+    // Show Typing indicator
+    const typingIndicator = document.getElementById('chatTyping');
+    typingIndicator.classList.add('visible');
+    
+    // Auto Scroll
+    const msgsContainer = document.getElementById('chatMessages');
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+
+    const selectedTicker = document.getElementById('chatContext').value;
+
+    try {
+      const res = await fetch('http://127.0.0.1:5001/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: prompt,
+          ticker: selectedTicker,
+          history: chatHistory
+        })
+      });
+
+      const data = await res.json();
+      typingIndicator.classList.remove('visible');
+
+      if (data.reply) {
+        appendChatMessage('assistant', data.reply);
+        
+        // Save conversation history segment for continuous context tracking
+        chatHistory.push({ role: 'user', content: prompt });
+        chatHistory.push({ role: 'assistant', content: data.reply });
+        
+        // Cap conversation buffer size for token performance
+        if (chatHistory.length > 12) {
+          chatHistory = chatHistory.slice(-12);
+        }
+      } else if (data.error) {
+        appendChatMessage('assistant', `Error executing analysis request: ${data.error}`);
+      }
+    } catch (err) {
+      typingIndicator.classList.remove('visible');
+      appendChatMessage('assistant', `Failed to connect with local server. Verify terminal is running python app_gemini.py on port 5001.`);
+    }
+  }
+
+  // Setup Key listeners inside chatbox
+  document.getElementById('chatTextarea').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+
+  document.getElementById('tickers').addEventListener('keydown', e => {
+    if (e.key === 'Enter') analyze();
+  });
+</script>
+
+</body>
+</html>
